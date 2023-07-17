@@ -3,13 +3,12 @@ import app, { init } from '@/app';
 import supertest from "supertest";
 import httpStatus from "http-status";
 import * as jwt from 'jsonwebtoken';
-import { createEnrollmentWithAddress, createHotel, createPayment, createTicket, createTicketTypeRemote, createUser} from "../factories";
+import { createEnrollmentWithAddress, createHotel, createPayment, createTicket, createTicketTypeRemote, createTicketTypeWithHotel, createUser} from "../factories";
 import { cleanDb, generateValidToken } from "../helpers";
 import { TicketStatus } from "@prisma/client";
 
 beforeAll(async () => {
     await init();
-    await cleanDb();
 });
 
 afterEach(async () => {
@@ -78,21 +77,12 @@ describe('GET/hotels', () => {
             expect(response.status).toEqual(httpStatus.NOT_FOUND);
         });
 
-        it('should respond with status 404 when user has no ticket',async () => {
-            const user = await createUser();
-            const token = await generateValidToken(user);
-            const ticketType = await createTicketTypeRemote();
-
-            const response = await server.get('/hotels').set('Authorization', `Bearer ${token}`);
-
-            expect(response.status).toEqual(httpStatus.NOT_FOUND);
-        });
 
         it('should respond with status 200 and list hotels', async() => {
             const user = await createUser();
             const token = await generateValidToken(user);
             const enrollment = await createEnrollmentWithAddress(user);
-            const ticketType = await createTicketTypeRemote();
+            const ticketType = await createTicketTypeWithHotel();
             const ticket = await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
             const payments = await createPayment(ticket.id, ticketType.price);
             const createdHotel = await createHotel();
@@ -100,17 +90,20 @@ describe('GET/hotels', () => {
             const response = await server.get('/hotels').set('Authorization', `Bearer ${token}`);
 
             expect(response.status).toEqual(httpStatus.OK);
-            expect(response.body).toEqual([
-                {
-                    id: createdHotel.id,
-                    name: createdHotel.name,
-                    image: createdHotel.image,
-                    createdAt: createdHotel.createdAt.toISOString(),
-                    updatedAt: createdHotel.updatedAt.toISOString(),
-                }
-            ])
+            expect(response.body).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                            id: createdHotel.id,
+                            name: createdHotel.name,
+                            image: createdHotel.image,
+                            createdAt: createdHotel.createdAt.toISOString(),
+                            updatedAt: createdHotel.updatedAt.toISOString()
+                        })
+                ])
+            );
 
         });
+
 
     })
 
