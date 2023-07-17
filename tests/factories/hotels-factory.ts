@@ -9,3 +9,15 @@ export async function creteHotel() {
         }
     })
 };
+
+export async function creteRoomByHotelId(hotelId: number) {
+    return await prisma.room.create({
+        data: {
+            name: '201',
+            capacity: 3,
+            hotelId: hotelId
+        }
+    })
+};
+
+

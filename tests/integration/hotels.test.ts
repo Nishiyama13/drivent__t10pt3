@@ -10,10 +10,13 @@ import { TicketStatus } from "@prisma/client";
 beforeAll(async () => {
     await init();
     await cleanDb();
-  });
+});
+
+afterEach(async () => {
+    await cleanDb();
+})
 
 const server = supertest(app);
-//const hotels = await buildHotel();
 
 describe('GET/hotels', () => {
     it('should respond with status 401 if no token is given', async () => {
@@ -40,7 +43,7 @@ describe('GET/hotels', () => {
     });
 
     describe('when token is valid', () => {
-        it('should respond with status 404 when user ticket is remote', async() => {
+        it('should respond with status 402 when user ticket is remote', async() => {
             const user = await createUser();
             const token = await generateValidToken(user);
             const enrollment = await createEnrollmentWithAddress(user);
@@ -50,7 +53,7 @@ describe('GET/hotels', () => {
 
             const response = await server.get('/hotels').set('Authorization', `Bearer ${token}`);
 
-            expect(response.status).toEqual(httpStatus.NOT_FOUND)
+            expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED)
         });
 
         it('should respond with status 404 when user has no enrollment',async () => {
