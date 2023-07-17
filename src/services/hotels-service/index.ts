@@ -8,7 +8,9 @@ async function verify( userId:number ) {
     if(!enrollment) throw notFoundError();
 
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
-    if(!ticket || ticket.status !== 'PAID' || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel) throw cannotListHotelsError();
+    if(!ticket) throw notFoundError();
+
+    if( ticket.status !== 'PAID' || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel) throw cannotListHotelsError();
 }
 
 async function getHotels(userId: number){
