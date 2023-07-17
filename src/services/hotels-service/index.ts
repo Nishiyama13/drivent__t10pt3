@@ -3,7 +3,7 @@ import { notFoundError, unauthorizedError } from "../../errors";
 import hotelRepository from "../../repositories/hotels-repository";
 import enrollmentRepository from "../../repositories/enrollment-repository";
 import ticketsRepository from "../../repositories/tickets-repository";
-import { PAYMENT_REQUIRED } from "http-status";
+import { cannotListHotelsError } from "../../errors/cannot-list-hotels-error";
 
 async function verify( userId:number ) {
     const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
@@ -13,8 +13,7 @@ async function verify( userId:number ) {
 
     const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
     if(!ticket) throw notFoundError();
-    if(ticket.status !== 'PAID' || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel ) throw PAYMENT_REQUIRED
-    
+    if(ticket.status !== 'PAID' || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel) throw cannotListHotelsError();
 }
 
 async function getHotels(userId: number): Promise<Hotel[]>{
