@@ -1,23 +1,43 @@
 import { Hotel, Room } from "@prisma/client";
-import { notFoundError } from "../../errors";
+import { notFoundError, unauthorizedError } from "../../errors";
 import hotelRepository from "../../repositories/hotels-repository";
+import enrollmentRepository from "../../repositories/enrollment-repository";
+import ticketsRepository from "../../repositories/tickets-repository";
+import { PAYMENT_REQUIRED } from "http-status";
 
-async function getHotels(): Promise<(Hotel & { Rooms: Room[]})[]> {
-    const hotels = await hotelRepository.findHotels()
+async function verify( userId:number ) {
+    const enrollment = await enrollmentRepository.findWithAddressByUserId(userId);
+    if(!enrollment) throw notFoundError();
+
+    if (enrollment.userId !== userId) throw unauthorizedError();
+
+    const ticket = await ticketsRepository.findTicketByEnrollmentId(enrollment.id);
+    if(!ticket) throw notFoundError();
+    if(ticket.status !== 'PAID' || ticket.TicketType.isRemote || !ticket.TicketType.includesHotel ) throw PAYMENT_REQUIRED
+    
+}
+
+async function getHotels(userId: number): Promise<Hotel[]>{
+    await verify(userId);
+
+    const hotels = await hotelRepository.findHotels();
+    if (!hotels || hotels.length === 0) throw notFoundError();
+    
     return hotels
 }
 
-async function getHotelsByHotelId(hotelId: number): Promise<(Hotel & { Rooms: Room[]})> {
-    const hotel = await hotelRepository.findHotelByHotelId(hotelId);
+async function getRoomsByHotelId(userId: number, hotelId: number): Promise<(Hotel & { Rooms: Room[]})> {
+    await verify(userId);
 
-    if(!hotel) throw notFoundError();
+    const hotel = await hotelRepository.findRoomsByHotelId(hotelId);
+    if(!hotel || hotel.Rooms.length === 0) throw notFoundError();
 
     return hotel;
 }
 
 const hotelsService = {
     getHotels,
-    getHotelsByHotelId
+    getRoomsByHotelId
 }
 
 export default hotelsService;
