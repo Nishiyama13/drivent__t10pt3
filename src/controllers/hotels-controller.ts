@@ -7,7 +7,7 @@ import hotelsService from '../services/hotels-service';
 export async function getAllHotels(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     const { userId } = req;
     try {
-      const hotels = await hotelsService.getHotels(userId);
+      const hotels = await hotelsService.getHotels(Number(userId));
       return res.status(httpStatus.OK).send(hotels);
     } catch (e) {
       next(e);
@@ -23,7 +23,7 @@ export async function getRoomsByHotelId(req: AuthenticatedRequest, res: Response
     }
 
     try {
-      const rooms = await hotelsService.getRoomsByHotelId(userId, hotelId);
+      const rooms = await hotelsService.getRoomsByHotelId(Number(userId), hotelId);
       return res.status(httpStatus.OK).send(rooms);
     } catch (e) {
       next(e);
